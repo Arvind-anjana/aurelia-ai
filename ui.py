@@ -381,12 +381,12 @@ def main():
                     doc_path = data_dir / selected_doc
                     
                     if doc_path.suffix.lower() == '.pdf':
-                        # Render PDF via base64 iframe
+                        # Render PDF using streamlit-pdf-viewer to avoid browser blocking
+                        # pyrefly: ignore [missing-import]
+                        from streamlit_pdf_viewer import pdf_viewer
                         with open(doc_path, "rb") as f:
-                            base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-                        
-                        display_html = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="700px" type="application/pdf" style="border: 1px solid rgba(212,175,55,0.2); border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);"></iframe>'
-                        st.markdown(display_html, unsafe_allow_html=True)
+                            pdf_bytes = f.read()
+                        pdf_viewer(pdf_bytes, height=700)
                         
                     elif doc_path.suffix.lower() == '.txt':
                         # Render Text file in a styled scrollable div
