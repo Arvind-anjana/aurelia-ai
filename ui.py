@@ -295,15 +295,33 @@ def main():
                     data_dir = project_root / "data"
                     os.makedirs(data_dir, exist_ok=True)
                     
+                    new_docs = []
                     for uploaded_file in uploaded_files:
                         file_path = data_dir / uploaded_file.name
                         with open(file_path, "wb") as f:
                             f.write(uploaded_file.getbuffer())
+                            
+                        # Load only the newly uploaded file to avoid duplicating the entire knowledge base
+                        try:
+                            ext = file_path.suffix.lower()
+                            if ext == '.pdf':
+                                from langchain_community.document_loaders import PyMuPDFLoader
+                                new_docs.extend(PyMuPDFLoader(str(file_path)).load())
+                            elif ext == '.txt':
+                                from langchain_community.document_loaders import TextLoader
+                                new_docs.extend(TextLoader(str(file_path)).load())
+                            elif ext == '.csv':
+                                from langchain_community.document_loaders import CSVLoader
+                                new_docs.extend(CSVLoader(str(file_path)).load())
+                        except Exception as e:
+                            st.error(f"Error reading {uploaded_file.name}: {e}")
                     
-                    # Rebuild the vector store using the existing pipeline
-                    docs = load_all_documents(str(data_dir))
-                    rag.vectorstore.build_from_documents(docs)
-                    st.success("Knowledge Base Updated!")
+                    # Add ONLY the newly uploaded documents to the vector store
+                    if new_docs:
+                        rag.vectorstore.build_from_documents(new_docs)
+                        st.success("Knowledge Base Updated without duplicating old files!")
+                    else:
+                        st.warning("No readable text found in uploads.")
             else:
                 st.warning("Please upload a file first.")
 
