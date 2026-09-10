@@ -13,3 +13,10 @@ streamlit>=1.41.0
 requests>=2.31.0
 tavily-python>=0.3.3
 torchvision>=0.16.0
+
+langchain-ollama>=0.1.0
+langgraph>=0.2.0
+
+docx2txt
+unstructured
+openpyxl
