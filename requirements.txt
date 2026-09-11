@@ -21,4 +21,4 @@ langgraph>=0.2.0
 docx2txt
 unstructured
 openpyxl
-streamlit-pdf-viewer>=0.0.43
+streamlit-pdf-viewer
