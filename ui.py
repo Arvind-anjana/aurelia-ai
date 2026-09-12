@@ -325,6 +325,20 @@ def main():
             else:
                 st.warning("Please upload a file first.")
 
+        st.markdown("---")
+        if st.button("Clear Knowledge Base"):
+            with st.spinner("Clearing knowledge base..."):
+                rag.vectorstore.clear()
+                
+                # Delete physical files in data directory
+                data_dir = project_root / "data"
+                if data_dir.exists():
+                    import shutil
+                    shutil.rmtree(data_dir)
+                    os.makedirs(data_dir, exist_ok=True)
+                    
+                st.success("Knowledge Base cleared successfully! All uploaded files deleted.")
+
     # --- MAIN INTERFACE ---
     if show_pdf:
         chat_col, doc_col = st.columns([100 - pdf_width, pdf_width])

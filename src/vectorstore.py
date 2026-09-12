@@ -96,20 +96,13 @@ class FaissVectorStore:
         query_emb= self.model.encode(queryT).astype('float32')
         return self.search(query_emb,top_k=top_k)
 
-        
-
-
-        
-            
-
-        
-        
-
-
-         
-
-
-
-
-
-    
+    def clear(self):
+        self.index = None
+        self.metadata = []
+        faiss_path = os.path.join(self.persist_dir, "faiss.index")
+        meta_path = os.path.join(self.persist_dir, "metadata.pkl")
+        if os.path.exists(faiss_path):
+            os.remove(faiss_path)
+        if os.path.exists(meta_path):
+            os.remove(meta_path)
+        print(f"Cleared faiss index and metadata from {self.persist_dir}")
