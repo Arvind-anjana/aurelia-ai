@@ -8,6 +8,7 @@ from langchain_groq import ChatGroq
 from langchain_ollama import ChatOllama
 from langchain.tools import tool
 from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import MemorySaver
 from langchain_community.tools.tavily_search import TavilySearchResults
 
 def check_internet():
@@ -19,6 +20,7 @@ def check_internet():
 
 class RAGSearch:
     def __init__(self,persist_directory: str= "faiss_store", embedding_model:str="all-MiniLM-L6-v2"):
+        self.memory = MemorySaver()
         self.vectorstore = FaissVectorStore(persist_directory, embedding_model)
         self.persist_dir= persist_directory
         ## load or build vector store      
@@ -64,7 +66,7 @@ class RAGSearch:
 
         print(f"groq llm and local ollama initialised with Agent capabilities")
 
-    def search_and_summarize(self,query:str ,top_k:int =5, use_web:bool = True)-> str:
+    def search_and_summarize(self,query:str ,top_k:int =5, use_web:bool = True, thread_id:str = "default")-> str:
         is_online = check_internet()
         tools = [self.local_tool]
         
@@ -79,8 +81,9 @@ class RAGSearch:
         
         try:
             # Create agent
-            agent = create_react_agent(llm, tools, prompt=self.system_prompt)
-            response = agent.invoke({"messages": [("user", query)]})
+            agent = create_react_agent(llm, tools, prompt=self.system_prompt, checkpointer=self.memory)
+            config = {"configurable": {"thread_id": thread_id}}
+            response = agent.invoke({"messages": [("user", query)]}, config=config)
             return response["messages"][-1].content, is_online
         except Exception as e:
             # Fallback if tool calling fails (common with older local Ollama models)

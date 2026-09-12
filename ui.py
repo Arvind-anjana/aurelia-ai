@@ -243,9 +243,12 @@ def main():
     st.set_page_config(page_title="Aurélia", page_icon="🏛️", layout="wide")
     inject_custom_css()
     
-    # Initialize session state for chat
+    # Initialize session state for chat and thread_id
     if "messages" not in st.session_state:
         st.session_state.messages = []
+    if "thread_id" not in st.session_state:
+        import uuid
+        st.session_state.thread_id = str(uuid.uuid4())
         
     rag = get_rag_engine()
     
@@ -337,6 +340,9 @@ def main():
                     shutil.rmtree(data_dir)
                     os.makedirs(data_dir, exist_ok=True)
                     
+                st.session_state.messages = []
+                import uuid
+                st.session_state.thread_id = str(uuid.uuid4())
                 st.success("Knowledge Base cleared successfully! All uploaded files deleted.")
 
     # --- MAIN INTERFACE ---
@@ -366,7 +372,7 @@ def main():
             with st.chat_message("assistant"):
                 with st.spinner("Searching and thinking..."):
                     try:
-                        response, was_online = rag.search_and_summarize(prompt, use_web=use_web)
+                        response, was_online = rag.search_and_summarize(prompt, use_web=use_web, thread_id=st.session_state.thread_id)
                         st.markdown(response)
                         
                         # Optional: append context about offline mode if it switched during query
