@@ -235,8 +235,8 @@ def inject_custom_css():
 # ---------------------------------------------
 
 @st.cache_resource(show_spinner=False)
-def get_rag_engine():
-    # Cache busted to ensure new methods (like clear) are available
+def get_rag_agent():
+    # Cache busted again to load the updated RAGSearch class with MemorySaver
     return RAGSearch(persist_directory=str(project_root / "faiss_store"))
 
 def main():
@@ -250,7 +250,7 @@ def main():
         import uuid
         st.session_state.thread_id = str(uuid.uuid4())
         
-    rag = get_rag_engine()
+    rag = get_rag_agent()
     
     # Check internet for visual indicator
     is_online = check_internet()
