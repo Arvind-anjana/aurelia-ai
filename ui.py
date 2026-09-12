@@ -235,8 +235,8 @@ def inject_custom_css():
 # ---------------------------------------------
 
 @st.cache_resource(show_spinner=False)
-def get_rag_system():
-    # Cache busted to load the new use_web backend parameter
+def get_rag_engine():
+    # Cache busted to ensure new methods (like clear) are available
     return RAGSearch(persist_directory=str(project_root / "faiss_store"))
 
 def main():
@@ -247,7 +247,7 @@ def main():
     if "messages" not in st.session_state:
         st.session_state.messages = []
         
-    rag = get_rag_system()
+    rag = get_rag_engine()
     
     # Check internet for visual indicator
     is_online = check_internet()
