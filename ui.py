@@ -234,10 +234,7 @@ def inject_custom_css():
 # CORE LOGIC
 # ---------------------------------------------
 
-@st.cache_resource(show_spinner=False)
-def get_rag_agent():
-    # Cache busted again to load the updated RAGSearch class with MemorySaver
-    return RAGSearch(persist_directory=str(project_root / "faiss_store"))
+
 
 def main():
     st.set_page_config(page_title="Aurélia", page_icon="🏛️", layout="wide")
@@ -249,8 +246,18 @@ def main():
     if "thread_id" not in st.session_state:
         import uuid
         st.session_state.thread_id = str(uuid.uuid4())
+    if "session_id" not in st.session_state:
+        import uuid
+        st.session_state.session_id = str(uuid.uuid4())
         
-    rag = get_rag_agent()
+    session_id = st.session_state.session_id
+    session_data_dir = project_root / "data" / session_id
+    session_faiss_dir = project_root / "faiss_store" / session_id
+    
+    if "rag" not in st.session_state:
+        st.session_state.rag = RAGSearch(persist_directory=str(session_faiss_dir), data_directory=str(session_data_dir))
+        
+    rag = st.session_state.rag
     
     # Check internet for visual indicator
     is_online = check_internet()
@@ -294,13 +301,12 @@ def main():
         if st.button("Add to Knowledge Base"):
             if uploaded_files:
                 with st.spinner("Processing documents..."):
-                    # Save uploaded files to the 'data' directory
-                    data_dir = project_root / "data"
-                    os.makedirs(data_dir, exist_ok=True)
+                    # Save uploaded files to the session specific 'data' directory
+                    os.makedirs(session_data_dir, exist_ok=True)
                     
                     new_docs = []
                     for uploaded_file in uploaded_files:
-                        file_path = data_dir / uploaded_file.name
+                        file_path = session_data_dir / uploaded_file.name
                         with open(file_path, "wb") as f:
                             f.write(uploaded_file.getbuffer())
                             
@@ -333,12 +339,11 @@ def main():
             with st.spinner("Clearing knowledge base..."):
                 rag.vectorstore.clear()
                 
-                # Delete physical files in data directory
-                data_dir = project_root / "data"
-                if data_dir.exists():
+                # Delete physical files in session data directory
+                if session_data_dir.exists():
                     import shutil
-                    shutil.rmtree(data_dir)
-                    os.makedirs(data_dir, exist_ok=True)
+                    shutil.rmtree(session_data_dir)
+                    os.makedirs(session_data_dir, exist_ok=True)
                     
                 st.session_state.messages = []
                 import uuid
@@ -391,14 +396,13 @@ def main():
         with doc_col:
             st.markdown("<h1 class='sticky-title'>Document Viewer</h1>", unsafe_allow_html=True)
             
-            data_dir = project_root / "data"
-            if data_dir.exists():
+            if session_data_dir.exists():
                 # Get list of pdfs and txts
-                doc_files = [f.name for f in data_dir.iterdir() if f.suffix.lower() in ['.pdf', '.txt']]
+                doc_files = [f.name for f in session_data_dir.iterdir() if f.suffix.lower() in ['.pdf', '.txt']]
                 
                 if doc_files:
                     selected_doc = st.selectbox("Select a Document to view", doc_files)
-                    doc_path = data_dir / selected_doc
+                    doc_path = session_data_dir / selected_doc
                     
                     if doc_path.suffix.lower() == '.pdf':
                         # Render PDF using streamlit-pdf-viewer to avoid browser blocking

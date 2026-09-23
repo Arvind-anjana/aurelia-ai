@@ -48,3 +48,8 @@ Thumbs.db
 
 # NOTE: data/ and faiss_store/ are intentionally NOT ignored 
 # so that your pre-loaded knowledge base deploys successfully to the cloud!
+
+# Ignore data and vector stores
+data/
+faiss_store/
+*.csv

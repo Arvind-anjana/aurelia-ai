@@ -10,6 +10,8 @@ from langchain.tools import tool
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_community.tools.tavily_search import TavilySearchResults
+# pyrefly: ignore [missing-import]
+from src.guardrails import InputGuardrail
 
 def check_internet():
     try:
@@ -19,10 +21,11 @@ def check_internet():
         return False
 
 class RAGSearch:
-    def __init__(self,persist_directory: str= "faiss_store", embedding_model:str="all-MiniLM-L6-v2"):
+    def __init__(self,persist_directory: str= "faiss_store", data_directory: str= "data", embedding_model:str="all-MiniLM-L6-v2"):
         self.memory = MemorySaver()
         self.vectorstore = FaissVectorStore(persist_directory, embedding_model)
         self.persist_dir= persist_directory
+        self.data_dir = data_directory
         ## load or build vector store      
                  
         faiss_path =  os.path.join(self.persist_dir, "faiss.index")
@@ -32,8 +35,11 @@ class RAGSearch:
             print("vector store not found , building from documents")
             # pyrefly: ignore [missing-import]
             from src.data_loader import load_all_documents
-            docs= load_all_documents("data")
-            self.vectorstore.build_from_documents(docs)
+            if os.path.exists(self.data_dir):
+                docs= load_all_documents(self.data_dir)
+                self.vectorstore.build_from_documents(docs)
+            else:
+                self.vectorstore.build_from_documents([])
         else:
             print("loading existing vector store")
             self.vectorstore.load()
@@ -68,6 +74,12 @@ class RAGSearch:
 
     def search_and_summarize(self,query:str ,top_k:int =5, use_web:bool = True, thread_id:str = "default")-> str:
         is_online = check_internet()
+        
+        # --- INPUT GUARDRAIL CHECK ---
+        guardrail = InputGuardrail(is_online=is_online)
+        if not guardrail.check_query(query):
+            return "I'm sorry, but I cannot fulfill that request. Please ask a question relevant to your uploaded documents.", is_online
+        
         tools = [self.local_tool]
         
         if is_online:
