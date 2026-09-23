@@ -7,6 +7,11 @@ import base64
 project_root = Path(__file__).parent
 
 # pyrefly: ignore [missing-import]
+import sys
+import importlib
+if "src.search" in sys.modules:
+    importlib.reload(sys.modules["src.search"])
+# pyrefly: ignore [missing-import]
 from src.search import RAGSearch
 # pyrefly: ignore [missing-import]
 from src.search import check_internet
