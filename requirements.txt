@@ -20,3 +20,4 @@ docx2txt
 unstructured
 openpyxl
 streamlit-pdf-viewer
+streamlit-cookies-controller

@@ -1,4 +1,5 @@
 import streamlit as st
+from streamlit_cookies_controller import CookieController
 import os
 from pathlib import Path
 import base64
@@ -245,15 +246,26 @@ def main():
     st.set_page_config(page_title="Aurélia", page_icon="🏛️", layout="wide")
     inject_custom_css()
     
-    # Initialize session state for chat and thread_id
+    import uuid
+    cookie_controller = CookieController()
+    cookie_session_id = cookie_controller.get("aurelia_session_id")
+    
+    # Initialize session state for chat and session_id
+    if "session_id" not in st.session_state:
+        if cookie_session_id:
+            st.session_state.session_id = cookie_session_id
+        else:
+            new_id = str(uuid.uuid4())
+            st.session_state.session_id = new_id
+            cookie_controller.set("aurelia_session_id", new_id, max_age=86400 * 30)
+    elif cookie_session_id and st.session_state.session_id != cookie_session_id:
+        # Sync if cookie was loaded after initial render
+        st.session_state.session_id = cookie_session_id
+
     if "messages" not in st.session_state:
         st.session_state.messages = []
     if "thread_id" not in st.session_state:
-        import uuid
-        st.session_state.thread_id = str(uuid.uuid4())
-    if "session_id" not in st.session_state:
-        import uuid
-        st.session_state.session_id = str(uuid.uuid4())
+        st.session_state.thread_id = st.session_state.session_id
         
     session_id = st.session_state.session_id
     session_data_dir = project_root / "data" / session_id
